@@ -4,16 +4,45 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <!-- 가로 모드 설정 추가 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-orientation" content="landscape">
     <title>My project</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+      /* 세로 모드 경고 메시지 스타일 */
+      #rotation-warning {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-90deg);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        z-index: 1000;
+      }
+      @media screen and (orientation: portrait) {
+        #rotation-warning {
+          display: block;
+        }
+        #unity-container {
+          display: none;
+        }
+      }
+    </style>
     <script>
-        // jsPDF 초기화
         window.jspdf = window.jspdf;
     </script>
   </head>
   <body class="dark">
+    <div id="rotation-warning">
+      화면을 가로로 돌려주세요
+    </div>
     <div id="unity-container" class="unity-desktop">
       <canvas id="unity-canvas"></canvas>
     </div>
@@ -28,6 +57,14 @@
     </div>
     <div id="unity-fullscreen-button" style="display: none;"></div>
     <script>
+      // Screen Orientation API 설정
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape')
+          .catch(function(error) {
+            console.log('화면 방향 고정 실패:', error);
+          });
+      }
+
       const hideFullScreenButton = "true";
       const buildUrl = "Build";
       const loaderUrl = buildUrl + "/portfolio2025.loader.js";
