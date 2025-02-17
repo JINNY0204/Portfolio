@@ -4,61 +4,16 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <!-- 가로 모드 설정 -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-orientation" content="landscape">
     <title>My project</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <style>
-      /* 세로 모드 경고 메시지 스타일 */
-      #rotation-warning {
-        display: none;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) rotate(-90deg);
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 20px;
-        border-radius: 10px;
-        text-align: center;
-        z-index: 1000;
-      }
-      @media screen and (orientation: portrait) {
-        #rotation-warning {
-          display: block;
-        }
-        #unity-container {
-          display: none;
-        }
-      }
-      /* 전체화면 스타일 */
-      html, body {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-      }
-      #unity-container {
-        width: 100%;
-        height: 100%;
-      }
-      #unity-canvas {
-        width: 100%;
-        height: 100%;
-      }
-    </style>
     <script>
+        // jsPDF 초기화
         window.jspdf = window.jspdf;
     </script>
   </head>
   <body class="dark">
-    <div id="rotation-warning">
-      화면을 가로로 돌려주세요
-    </div>
     <div id="unity-container" class="unity-desktop">
       <canvas id="unity-canvas"></canvas>
     </div>
@@ -73,39 +28,6 @@
     </div>
     <div id="unity-fullscreen-button" style="display: none;"></div>
     <script>
-      // 화면 방향 및 전체화면 설정 함수
-      function setupMobileDisplay() {
-        // 가로 모드 강제
-        if (screen.orientation && screen.orientation.lock) {
-          screen.orientation.lock('landscape')
-            .catch(function(error) {
-              console.log('화면 방향 고정 실패:', error);
-            });
-        }
-
-        // 전체화면 진입 함수
-        function enterFullscreen() {
-          var element = document.documentElement;
-          if (element.requestFullscreen) {
-            element.requestFullscreen();
-          } else if (element.webkitRequestFullscreen) {
-            element.webkitRequestFullscreen();
-          } else if (element.mozRequestFullScreen) {
-            element.mozRequestFullScreen();
-          } else if (element.msRequestFullscreen) {
-            element.msRequestFullscreen();
-          }
-        }
-
-        // 페이지 로드시 자동으로 전체화면 시도
-        enterFullscreen();
-
-        // 사용자 상호작용(터치)시 전체화면 재시도
-        document.addEventListener('touchend', function() {
-          enterFullscreen();
-        }, { once: true });
-      }
-
       const hideFullScreenButton = "true";
       const buildUrl = "Build";
       const loaderUrl = buildUrl + "/portfolio2025.loader.js";
@@ -127,11 +49,24 @@
       const fullscreenButton = document.querySelector("#unity-fullscreen-button");
       const spinner = document.querySelector('.spinner');
 
+      const canFullscreen = (function() {
+        for (const key of [
+            'exitFullscreen',
+            'webkitExitFullscreen',
+            'webkitCancelFullScreen',
+            'mozCancelFullScreen',
+            'msExitFullscreen',
+          ]) {
+          if (key in document) {
+            return true;
+          }
+        }
+        return false;
+      }());
+
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
         container.className = "unity-mobile";
         config.devicePixelRatio = 1;
-        // 모바일 기기일 경우 화면 설정 적용
-        setupMobileDisplay();
       }
       loadingCover.style.display = "";
 
@@ -144,14 +79,13 @@
           progressBarFull.style.width = `${100 * progress}%`;
         }).then((unityInstance) => {
           loadingCover.style.display = "none";
-          if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-            // 모바일에서는 Unity 인스턴스 로드 후 다시 한번 전체화면 시도
-            setTimeout(function() {
-              document.documentElement.requestFullscreen()
-                .catch(function(error) {
-                  console.log('전체화면 전환 실패:', error);
-                });
-            }, 1000);
+          if (canFullscreen) {
+            if (!hideFullScreenButton) {
+              fullscreenButton.style.display = "";
+            }
+            fullscreenButton.onclick = () => {
+              unityInstance.SetFullscreen(1);
+            };
           }
         }).catch((message) => {
           alert(message);
